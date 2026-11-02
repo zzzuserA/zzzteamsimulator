@@ -325,3 +325,14 @@ main > .teams .team.swap-source{
 }
 #groupImagePreview{height:auto;max-height:none}
 #groupImageModal .modalActions{flex-wrap:wrap}
+
+/* Easier-to-tap constellation settings without widening character cards. */
+main > .chars .char .conv{
+  width:100%;
+  max-width:96px;
+  min-height:38px;
+  padding:7px 4px;
+  font-size:12px;
+  line-height:1.2;
+  white-space:nowrap;
+}
