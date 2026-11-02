@@ -64,7 +64,7 @@ function validBangbooLayout(){
   return true;
 }
 let moveSaving=false,moveUndo=[],moveRedo=[],swapSource=null,lastTeamTap=null;
-let teamHighlightVisible=true;
+let teamHighlightVisible=false;
 function moveSnapshot(){return JSON.stringify({teams,bangboos,active})}
 function updateMoveButtons(){
   const undo=$('undoMove'),redo=$('redoMove');
