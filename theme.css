@@ -153,16 +153,14 @@ main > .agentControls.hide,
 main > .bangbooControls:not(.show){display:none}
 main > .count{margin:0 0 var(--section-space)}
 main > .count:empty{margin:0}
-main > .chars{
-  gap:var(--section-space);
-}
+main > .chars{gap:3px}
 main > .status{margin-top:var(--section-space)}
 /* Do not enlarge fixed-size character images, drag targets, or modal controls. */
 @media(max-width:560px){
   main > .toolbar{gap:var(--section-space);padding:var(--section-space)}
   main > .teams{gap:var(--section-space)}
   main > .teams .slots{gap:var(--section-space)}
-  main > .chars{gap:var(--section-space)}
+  main > .chars{gap:3px}
 }
 
 /* Toolbar button spacing: 10px on all devices; all other spacing unchanged. */
