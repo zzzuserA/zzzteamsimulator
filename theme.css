@@ -312,3 +312,16 @@ main > .teams .team.swap-source{
   main > .teams .team.swap-source{animation:none;border-color:#ffe058}
 }
 
+
+/* A larger on-screen preview; export dimensions stay unchanged. */
+#groupImageModal{padding:6px}
+#groupImageModal .modalbox{
+  width:min(1280px,100%);
+  max-width:1280px;
+  max-height:calc(100vh - 12px);
+  max-height:calc(100dvh - 12px);
+  overflow:auto;
+  padding:10px;
+}
+#groupImagePreview{height:auto;max-height:none}
+#groupImageModal .modalActions{flex-wrap:wrap}
