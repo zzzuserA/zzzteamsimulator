@@ -13,9 +13,10 @@ h1::after{display:none}
 .toolbar{gap:8px;padding:12px;background:#0a0a0a;border:3px solid #383838;border-radius:24px}
 .toolbar button{font-size:13px}
 .team{background:#202020;border:2px solid #414141;border-radius:20px}
-.team.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.team.active{border-color:var(--accent);box-shadow:none}
 .team.active .teamhead b{color:var(--accent)}
 .teamhead b{font-weight:900}
+.teamhead b,.teamCost{font-size:15px;line-height:1.2}
 .slot,.bangbooSlot{background:repeating-linear-gradient(135deg,#191919 0 2px,#151515 2px 5px);border-radius:12px}
 .slot img,.bangbooSlot img,.char img{background:#303030}
 .char{background:#101010;border:2px solid #414141;border-radius:16px}
@@ -25,9 +26,10 @@ h1::after{display:none}
 .modeTabs button{min-width:125px;border-color:transparent;background:transparent}
 .modeTabs button.active{background:var(--accent);color:#080808;border-color:var(--accent)}
 input,select{border:2px solid #414141;border-radius:24px;background:#101010}
-.groupLabel{background:#0a0a0a;border-radius:20px;padding:10px 14px;font-size:14px;color:var(--text);flex-wrap:wrap;gap:8px}
+.groupLabel{background:#0a0a0a;border-radius:20px;padding:10px 14px;font-size:15px;color:var(--muted);flex-wrap:wrap;gap:8px}
 .groupCost,.teamCost,.allCost{color:var(--muted)}
-.allCost{color:var(--accent)}
+.groupCost{font-size:15px}
+.allCost{font-size:15px;color:var(--accent)}
 .modalbox{border:3px solid #414141;border-radius:24px;background:#171717}
 .modalbox h2{font-weight:900}
 @media(max-width:560px){.headerDecor{padding:16px}.headerDecor h1{font-size:22px}.toolbar{padding:9px}.toolbar button{font-size:12px;padding:8px 10px}.groupLabel{padding:8px 10px}.groupCost,.allCost{white-space:normal}.filters input[type=search],.bangbooControls .filters input[type=search]{min-width:0;width:100%;flex:1 1 100%}.filters select{min-width:0;max-width:100%}.formgrid input,.formgrid select{min-width:0}.descriptionToggle{margin-left:0}}
@@ -167,36 +169,146 @@ main > .status{margin-top:var(--section-space)}
 main > .toolbar{gap:5px}
 main > .toolbar .groupControls{gap:5px}
 
-/* Narrow-screen: overall cost top right; group name and group cost aligned below */
-@media(max-width:700px){
-  main > .teams .groupLabel:has(.allCost){
-    display:grid;
-    grid-template-columns:max-content minmax(0,1fr);
-    grid-template-rows:auto auto;
-    align-items:center;
-    column-gap:12px;
-    row-gap:12px;
-  }
-  main > .teams .groupLabel:has(.allCost) > span:first-child{
-    grid-column:1;
-    grid-row:2;
-    min-width:0;
-  }
-  main > .teams .groupLabel .allCost{
-    grid-column:1 / -1;
-    grid-row:1;
-    justify-self:end;
-    text-align:right;
-    margin:0;
-    min-width:0;
-    flex:initial;
-  }
-  main > .teams .groupLabel:has(.allCost) .groupCost{
-    grid-column:2;
-    grid-row:2;
-    justify-self:start;
-    margin:0;
-    min-width:0;
-    flex:initial;
+/* Expanded agent frames with compact spacing and a smaller Bangboo slot. */
+:root{--team-slot-space:5px}
+main > .teams .team{padding:var(--team-slot-space)}
+main > .teams .teamhead{margin:0 0 var(--team-slot-space);padding:var(--team-slot-space)}
+main > .teams .teamContents{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 70px;
+  align-items:end;
+  gap:var(--team-slot-space);
+}
+main > .teams .teamContents:has(> .bangbooWrap[style*="display:none"]){
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
+}
+main > .teams .slots{gap:var(--team-slot-space)}
+main > .teams .bangbooWrap{
+  width:70px;
+  height:70px;
+  min-width:70px;
+  flex:none;
+  align-self:end;
+}
+main > .teams .bangbooSlot{
+  width:70px;
+  height:70px;
+  min-height:70px;
+}
+main > .teams .slot.empty,
+main > .teams .bangbooSlot.empty{
+  border:2px dashed #606060;
+  border-radius:12px;
+}
+main > .teams .slot.empty:hover,
+main > .teams .bangbooSlot.empty:hover{
+  border-style:solid;
+  border-color:var(--accent);
+}
+main > .teams .slot.drag-over,
+main > .teams .bangbooSlot.drag-over{border-style:solid}
+
+/* Selected unit outlines keep the normal border width and shape. */
+main > .teams .team.active.agent-selected .slot,
+main > .teams .team.active.bangboo-selected .bangbooSlot,
+main > .teams .slot:active{
+  border-style:solid;
+}
+main > .teams .team.active.agent-selected .slot,
+main > .teams .team.active.bangboo-selected .bangbooSlot{
+  border-color:var(--accent);
+  box-shadow:none;
+}
+main > .teams .slot,
+main > .teams .bangbooSlot{-webkit-tap-highlight-color:transparent}
+
+/* Keep character slots uniform and reserve one line for fitted unit names. */
+main > .teams .slot{
+  height:105px;
+  min-height:105px;
+}
+main > .teams .slot strong,
+main > .teams .bangbooSlot strong{
+  display:block;
+  width:100%;
+  max-width:100%;
+  white-space:nowrap;
+  line-height:1.15;
+}
+@media(max-width:560px){
+  main > .teams .slot{
+    height:95px;
+    min-height:95px;
   }
 }
+
+/* All groups share the same label layout; Total stays at the far right. */
+main > .teams .groupLabel{display:flex;flex-wrap:nowrap;align-items:center;column-gap:4px}
+main > .teams .groupLabel .allCost{margin-left:auto;text-align:right;white-space:nowrap}
+
+/* Unify live Group, Team, and all cost labels. */
+main > .teams .groupLabel,
+main > .teams .groupLabel > span,
+main > .teams .teamhead b,
+main > .teams .teamhead .teamCost{
+  font-size:17px!important;
+  line-height:1.2;
+}
+
+/* Match team-label white throughout the team summary; keep only Total accented. */
+main > .teams .groupLabel,
+main > .teams .groupLabel .groupCost,
+main > .teams .teamhead b,
+main > .teams .teamhead .teamCost,
+main > .teams .team.active .teamhead b{color:#fff}
+main > .teams .groupLabel .allCost{color:var(--accent)}
+main > .chars .char strong{
+  display:block;
+  width:100%;
+  max-width:100%;
+  white-space:nowrap;
+  overflow:hidden;
+  line-height:1.2;
+}
+
+/* Empty slots never show an isolated press highlight; touch scrolling stays native. */
+main > .teams .slot,
+main > .teams .bangbooSlot{touch-action:none}
+main > .teams .slot:not(.empty):active{border-style:solid}
+main > .teams .slot.empty:active,
+main > .teams .bangbooSlot.empty:active{
+  border:2px dashed #606060;
+  box-shadow:none;
+}
+@media(hover:none){
+  main > .teams .slot.empty:not(.drag-over):hover,
+  main > .teams .bangbooSlot.empty:not(.drag-over):hover{
+    border:2px dashed #606060;
+    box-shadow:none;
+  }
+}
+
+
+/* Circular move controls and clear team-swap cue. */
+main > .teams .groupLabel.firstGroup{position:relative;padding-top:53px}
+main > .teams .moveActions{position:absolute;top:4px;left:var(--section-space);display:flex;gap:6px}
+main > .teams .moveActions button{
+  width:43px;height:43px;min-width:43px;min-height:43px;padding:3px;
+  display:inline-flex;align-items:center;justify-content:center;line-height:1
+}
+main > .teams .moveActions svg{display:block;width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:6.5;stroke-linecap:round;stroke-linejoin:round}
+main > .teams #redoMove svg{transform:scaleX(-1)}
+main > .teams .moveActions button:disabled{opacity:.4;cursor:default}
+@keyframes teamSwapPulse{
+  0%,100%{border-color:#ffe058}
+  50%{border-color:#555}
+}
+main > .teams .team.swap-source{
+  outline:none;box-shadow:none;
+  animation:teamSwapPulse .65s steps(1,end) infinite
+}
+@media(prefers-reduced-motion:reduce){
+  main > .teams .team.swap-source{animation:none;border-color:#ffe058}
+}
+

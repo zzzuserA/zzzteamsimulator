@@ -9,6 +9,9 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser()
 parser.add_argument('--source',type=pathlib.Path,default=ROOT/'index.html')
 parser.add_argument('--report',type=pathlib.Path)
+parser.add_argument('--engine',choices=['chromium','firefox','webkit'],default='chromium')
+parser.add_argument('--device',choices=['desktop','iphone','android'],default='desktop')
+parser.add_argument('--only',default='',help='Comma-separated scenario names')
 args=parser.parse_args()
 SOURCE=args.source.resolve()
 CDN=pathlib.Path(os.environ.get('HTML2CANVAS_PATH',str(pathlib.Path(tempfile.gettempdir())/'zzz-html2canvas-1.4.1.min.js')))
@@ -18,8 +21,26 @@ if not CDN.exists():
     CDN.write_bytes(library)
 assert hashlib.sha256(CDN.read_bytes()).hexdigest() == 'e87e550794322e574a1fda0c1549a3c70dae5a93d9113417a429016838eab8cb', 'Unexpected html2canvas checksum'
 
+BASELINE=pathlib.Path(tempfile.gettempdir())/'zzz-production-0478.html'
+if not BASELINE.exists():
+    url='https://raw.githubusercontent.com/zzzuserA/zzzteamsimulator/0478b3adf4aa4ef4880384968d61f019a5fb4989/index.html'
+    with urllib.request.urlopen(url,timeout=30) as response:BASELINE.write_bytes(response.read())
+assert hashlib.sha256(BASELINE.read_bytes()).hexdigest()=='1ec84ba1a65bab81ab6b025a5038816a3ebdc1d4f26fa51046bb1cfe1a2b5a0a'
+
+FONT_DIR=pathlib.Path(tempfile.gettempdir())/'zzz-fonts'
+FONT_DIR.mkdir(exist_ok=True)
+for weight,name in [(500,'Medium'),(700,'Bold'),(900,'Black')]:
+    font=FONT_DIR/f'{weight}.ttf'
+    if not font.exists():
+        url=f'https://raw.githubusercontent.com/google/fonts/main/ofl/zenkakugothicnew/ZenKakuGothicNew-{name}.ttf'
+        with urllib.request.urlopen(url,timeout=30) as response:font.write_bytes(response.read())
+
+
 class QuietHandler(SimpleHTTPRequestHandler):
     def log_message(self,*args): pass
+    def handle(self):
+        try:super().handle()
+        except (BrokenPipeError,ConnectionResetError):pass
 
 results=[]
 def eq(actual, expected):
@@ -122,19 +143,23 @@ def legacy_data(p,d):
 def cost_totals(p,d):
     agent(p,0);p.locator('[data-conv="0"]').click();p.locator('#charConv').select_option('2');p.locator('#weaponConv').select_option('2');p.locator('#saveConv').click()
     eq(p.locator('[data-team="0"] .teamCost').inner_text(),'6 Cost')
-    p.locator('#ruleToggle').click();team(p,3);agent(p,0);eq(p.locator('.allCost').inner_text(),'全グループ総コスト: 12 Cost')
-    p.locator('#duplicateCostToggle').click();eq(p.locator('.allCost').inner_text(),'全グループ総コスト: 6 Cost')
-    p.reload();eq(p.locator('.allCost').inner_text(),'全グループ総コスト: 6 Cost')
+    p.locator('#ruleToggle').click();team(p,3);agent(p,0);eq(p.locator('.allCost').inner_text(),'Total: 12 Cost')
+    p.locator('#duplicateCostToggle').click();eq(p.locator('.allCost').inner_text(),'Total: 6 Cost')
+    p.reload();eq(p.locator('.allCost').inner_text(),'Total: 6 Cost')
 def legal_touch_drag(p,d):
     p.set_viewport_size({'width':390,'height':844});agent(p,0)
     p.locator('[data-slot="0,0"]').scroll_into_view_if_needed()
     a=p.locator('[data-slot="0,0"]').bounding_box();b=p.locator('[data-slot="0,1"]').bounding_box()
-    c=p.context.new_cdp_session(p)
-    c.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':a['x']+15,'y':a['y']+15}]})
-    c.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':b['x']+15,'y':b['y']+15}]})
-    c.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+    c=p.context.new_cdp_session(p) if args.engine=='chromium' else None
+    if c:
+        c.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':a['x']+15,'y':a['y']+15}]})
+        c.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':b['x']+15,'y':b['y']+15}]})
+        c.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+    else:
+        src=p.locator('[data-slot="0,0"]');props={'pointerType':'touch','pointerId':7,'bubbles':True,'clientX':a['x']+15,'clientY':a['y']+15}
+        src.dispatch_event('pointerdown',props);props.update(clientX=b['x']+15,clientY=b['y']+15);src.dispatch_event('pointermove',props);src.dispatch_event('pointerup',props)
     eq(p.locator('[data-slot="0,1"] strong').count(),1);eq(p.locator('[data-slot="0,0"] strong').count(),0)
-    p.wait_for_timeout(150)
+    p.wait_for_timeout(500)
     p.locator('[data-slot="0,1"]').click();eq(p.locator('.slot:not(.empty)').count(),0)
 def invalid_drag(p,d):
     p.locator('#specialty').select_option('支援');idx=p.locator('[data-agent]').first.get_attribute('data-agent')
@@ -250,9 +275,11 @@ def delete_agent_cancel(p,d):
     eq(p.evaluate('customAgents.length'),1);eq(p.evaluate('customBangboos.length'),0)
 def touch_tap(p,d):
     agent(p,0);p.locator('[data-slot="0,0"]').scroll_into_view_if_needed()
-    box=p.locator('[data-slot="0,0"]').bounding_box();c=p.context.new_cdp_session(p)
-    c.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':box['x']+15,'y':box['y']+15}]})
-    c.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+    box=p.locator('[data-slot="0,0"]').bounding_box();c=p.context.new_cdp_session(p) if args.engine=='chromium' else None
+    if c:
+        c.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':box['x']+15,'y':box['y']+15}]})
+        c.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+    else:p.locator('[data-slot="0,0"]').click()
     eq(p.locator('[data-slot="0,0"] strong').count(),0)
 def mobile_modal(p,d):
     p.set_viewport_size({'width':390,'height':600});p.locator('#addCharacter').click();p.locator('#chooseAgentAdd').click()
@@ -261,30 +288,44 @@ def mobile_modal(p,d):
 EXTRA=[bangboo_drag,bangboo_cancel,bangboo_same_image_selected,bangboo_delete_title,named_proto,stored_string_conv,quota_add,quota_add_boo,agent_swap,bangboo_swap,bangboo_invalid_drag,every_cost_combination,permanent_roundtrip,old_images_and_names,all_images,delete_agent_cancel,touch_tap,mobile_modal]
 
 TESTS+=EXTRA
+exec((ROOT/'tests'/'interaction_cases.py').read_text())
+TESTS+=NEW_TESTS
+if args.only:TESTS=[fn for fn in TESTS if fn.__name__ in args.only.split(',')]
 server=ThreadingHTTPServer(('127.0.0.1',0),partial(QuietHandler,directory=str(ROOT)))
 Thread(target=server.serve_forever,daemon=True).start()
 BASE=f'http://127.0.0.1:{server.server_port}'
 try:
     with sync_playwright() as pw:
-        browser=pw.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium'),headless=True)
+        launch={'headless':True}
+        if args.engine=='chromium':launch['executable_path']=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium')
+        launch['timeout']=15000
+        browser=getattr(pw,args.engine).launch(**launch)
         for fn in TESTS:
-            ctx=browser.new_context(viewport={'width':1280,'height':900});ctx._cdn_fail=fn==export_retry
+            options={'viewport':{'width':1280,'height':900}}
+            if args.device!='desktop':options.update(pw.devices['iPhone 13' if args.device=='iphone' else 'Pixel 7'])
+            ctx=browser.new_context(**options);ctx._cdn_fail=fn==export_retry
             def route(r):
                 u=r.request.url
                 if 'cdn.jsdelivr.net' in u:
                     if ctx._cdn_fail:r.abort('failed')
                     else:r.fulfill(path=CDN,content_type='application/javascript',headers={'Access-Control-Allow-Origin':'*'})
+                elif 'fonts.googleapis.com' in u and FONT_DIR.exists():
+                    css=''.join(f'@font-face{{font-family:"Zen Kaku Gothic New";font-weight:{w};src:url("{BASE}/test-font-{w}.ttf")}}' for w in [500,700,900])
+                    r.fulfill(body=css,content_type='text/css')
+                elif '/test-font-' in u:
+                    r.fulfill(path=FONT_DIR/(u.split('test-font-')[1]),content_type='font/ttf')
+                elif u.endswith('/baseline.html'):r.fulfill(path=BASELINE,content_type='text/html')
                 elif u.endswith('/index.html'):r.fulfill(path=SOURCE,content_type='text/html')
                 else:r.continue_()
             ctx.route('**/*',route)
-            page=ctx.new_page();page.set_default_timeout(5000);dialogs=[];errors=[]
+            page=ctx.new_page();page.set_default_timeout(5000);page.set_default_navigation_timeout(15000);dialogs=[];errors=[]
             page.on('dialog',lambda x:(dialogs.append(x.message),x.dismiss()))
             page.on('pageerror',lambda e:errors.append(str(e)))
             try:
-                page.goto(BASE+'/index.html',wait_until='load');fn(page,dialogs)
+                page.goto(BASE+'/index.html',wait_until='load');page.evaluate('document.fonts.ready');fn(page,dialogs)
                 assert not errors,errors
-                result={'test':fn.__name__,'result':'PASS'}
-            except Exception as e:result={'test':fn.__name__,'result':'FAIL','detail':str(e)[:550]}
+                result={'test':fn.__name__,'engine':args.engine,'device':args.device,'result':'PASS'}
+            except Exception as e:result={'test':fn.__name__,'engine':args.engine,'device':args.device,'result':'FAIL','detail':str(e)[:550]}
             print(json.dumps(result,ensure_ascii=False),flush=True);results.append(result);ctx.close()
         browser.close()
 finally:
@@ -294,3 +335,4 @@ if args.report:
 failed=sum(r['result']=='FAIL' for r in results)
 print(f'{len(results)-failed}/{len(results)} passed; {failed} failed')
 sys.exit(1 if failed else 0)
+
