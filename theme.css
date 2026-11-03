@@ -193,6 +193,7 @@ main > .teams .bangbooSlot{
   width:70px;
   height:70px;
   min-height:70px;
+  border:2px solid var(--line);
 }
 main > .teams .slot.empty,
 main > .teams .bangbooSlot.empty{
