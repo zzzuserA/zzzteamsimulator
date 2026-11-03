@@ -262,9 +262,6 @@ main > .teams .teamhead b,
 main > .teams .teamhead .teamCost,
 main > .teams .team.active .teamhead b{color:#fff}
 main > .teams .groupLabel .allCost{color:var(--accent)}
-/* Center the cost labels vertically within their dark summary bars. */
-main > .teams .groupLabel{align-items:center;align-content:center}
-main > .teams .groupLabel > span{display:flex;align-items:center;align-self:center;min-height:1.2em}
 main > .chars .char strong{
   display:block;
   width:100%;
