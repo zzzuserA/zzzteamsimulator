@@ -299,7 +299,8 @@ main > .teams .moveActions button{
 }
 main > .teams .moveActions svg{display:block;width:70px;height:48px;overflow:visible;fill:none;stroke:currentColor}
 main > .teams .moveActions .arrowOutline{stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
-main > .teams .moveActions .arrowGlyph{stroke-width:10;stroke-linecap:square;stroke-linejoin:miter}
+main > .teams .moveActions .arrowGlyph{stroke-width:10;stroke-linecap:butt;stroke-linejoin:round}
+main > .teams .moveActions .arrowHead{fill:currentColor;stroke:none}
 main > .teams #redoMove svg{transform:scaleX(-1)}
 main > .teams .moveActions button:disabled{opacity:.4;cursor:default}
 @keyframes teamSwapPulse{
