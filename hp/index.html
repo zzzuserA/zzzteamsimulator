@@ -1,0 +1,605 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>危局HP・スコア計算</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap');
+:root{color-scheme:dark;--bg:#101218;--panel:#1c212b;--line:#434c59;--text:#f5f6f8;--muted:#b4becb;--accent:#80d8e9;--yellow:#f9d345}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Noto Sans JP',sans-serif}button,input,select{font:inherit}main{max-width:1100px;margin:auto;padding:16px 12px 70px}.head{position:relative;padding:18px 20px;border:1px solid var(--accent);border-radius:12px;background:var(--panel)}.head h1{margin:0;font-size:clamp(24px,5vw,34px)}.head p{color:var(--muted);margin:6px 0 0}.back{position:absolute;right:18px;top:18px;color:white;text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px}.head h1,.head p{padding-right:125px}.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px 0}.controls label{font-size:13px;color:var(--muted);font-weight:700}.controls input,.controls select{display:block;width:100%;margin-top:6px;background:#151922;color:white;border:1px solid #65707e;border-radius:8px;padding:10px;min-height:44px}.controls input:focus,.controls select:focus,.back:focus-visible{outline:2px solid var(--accent)}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px}.stat span{display:block;font-size:12px;color:var(--muted)}.stat strong{display:block;margin-top:7px;font-size:clamp(20px,3vw,29px);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.stat.primary{border-color:var(--yellow)}.stat.primary strong{color:var(--yellow)}.detail{line-height:1.65;color:var(--muted);font-size:13px;margin:17px 2px 25px}.detail strong{color:white}.tableWrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}table{border-collapse:collapse;width:100%;min-width:650px;font-variant-numeric:tabular-nums}th,td{padding:9px 12px;text-align:right;border-bottom:1px solid #3c444f}th:first-child,td:first-child{text-align:center}thead th{background:#193bc4;color:white;font-size:13px;white-space:nowrap}tbody tr:nth-child(even){background:#232a34}tbody tr.current{background:#4a4224}tbody tr.done td{color:#9da8b5}tbody tr:last-child td{border-bottom:0}.bar{height:8px;border-radius:9px;background:#363e48;margin:12px 0;overflow:hidden}.bar div{height:100%;background:var(--yellow)}.caption{color:var(--muted);font-size:12px;margin:15px 2px}.error{color:#ffb49d;min-height:20px;font-size:13px}@media(max-width:740px){.controls,.summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:420px){.head{padding:15px}.head h1,.head p{padding-right:0}.head p{margin-top:44px}.back{top:auto;bottom:48px;right:15px}.controls{gap:9px}.stat{padding:11px}.stat strong{font-size:20px}}
+
+
+:root{--bg:#141414;--panel:#101010;--line:#414141;--text:#f7f7f2;--muted:#bcbcbc;--accent:#f0eb00;--yellow:#f0eb00}
+body{background:repeating-linear-gradient(135deg,#171717 0 3px,#141414 3px 7px);font-family:Arial,'Zen Kaku Gothic New','Noto Sans JP',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-weight:500}
+main{max-width:1180px;padding:24px 10px 40px}
+.head{position:relative;isolation:isolate;overflow:visible;padding:24px;margin-bottom:10px;border:3px solid #555;border-radius:28px;background:linear-gradient(115deg,rgba(255,255,255,.05) 0 19%,transparent 19% 100%),linear-gradient(115deg,transparent 0 27%,rgba(0,0,0,.30) 27% 48%,transparent 48% 100%),repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 2px,transparent 2px 8px),linear-gradient(115deg,#0a0a0a 0%,#1b1b1d 38%,#101113 60%,#090909 100%);box-shadow:7px 7px 0 #050505,inset 0 0 0 5px #151515}
+.head::before{content:'ZENLESS ZONE ZERO / DEADLY ASSAULT HP';position:absolute;top:20px;left:22px;max-width:calc(100% - 95px);padding:8px 28px 8px 18px;background:#f0eb00;color:#080808;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);font-size:11px;font-weight:900;letter-spacing:.14em;line-height:1.4}
+.head h1{display:block;width:fit-content;max-width:100%;margin:46px 0 12px;padding:0 0 0 15px;border-left:6px solid #f0eb00;font-size:clamp(23px,3.1vw,38px);font-weight:900;line-height:1.45;letter-spacing:.03em;color:#080808;text-shadow:-1px -1px 0 #fff,0 -1px 0 #fff,1px -1px 0 #fff,-1px 0 0 #fff,1px 0 0 #fff,-1px 1px 0 #fff,0 1px 0 #fff,1px 1px 0 #fff,3px 4px 0 #000}
+.head p{padding:0;margin:0;color:#bcbcbc}
+.hpMenu{position:absolute;right:12px;top:10px;z-index:20}.hpMenu summary{list-style:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:45px;height:45px;padding:8px;border:2px solid #fff;border-radius:12px;background:#15171b;cursor:pointer;box-shadow:0 0 0 1px #777}.hpMenu summary::-webkit-details-marker{display:none}.hpMenu summary span{display:block;flex:none;width:24px;min-width:24px;height:3px;min-height:3px;border-radius:5px;background:white}.hpMenu summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.hpMenu nav{position:absolute;right:0;top:calc(100% + 8px);min-width:155px;padding:5px;background:#181b24;border:1px solid var(--accent);border-radius:9px;box-shadow:0 8px 24px #0008}.hpMenu nav a{display:block;padding:10px;color:white;text-decoration:none;white-space:nowrap;border-radius:5px;font-weight:700}.hpMenu nav a:hover,.hpMenu nav a:focus-visible{background:#2b3544}
+.controls{gap:10px;margin:20px 0 10px}.controls input,.controls select{background:#101010;border:2px solid #414141;border-radius:24px;color:#f7f7f2;font-weight:700}.controls input:focus,.controls select:focus{outline-color:#f0eb00}.stat{background:#202020;border:2px solid #414141;border-radius:20px}.stat.primary{border-color:#f0eb00}.stat.primary strong{color:#f0eb00}.tableWrap{border:2px solid #414141;border-radius:20px;background:#202020}thead th{background:#373600;color:#f0eb00}tbody tr:nth-child(even){background:#262626}tbody tr.current{background:#373600}.bar div{background:#f0eb00}
+@media(max-width:560px){main{padding:10px 10px 30px}.head{padding:20px 10px;border-radius:22px}.head::before{top:10px;left:10px;max-width:calc(100% - 85px);padding:7px 20px 7px 14px;font-size:10px;letter-spacing:.08em}.head h1{margin:44px 0 12px;padding-left:11px;border-left-width:5px;font-size:24px}.head p{margin:0}.hpMenu{right:10px;top:10px}}
+.hpMenu summary{display:grid;place-items:center;gap:0;padding:0}.hpMenu .menuIcon{display:block;flex:none;width:28px;height:28px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}.calcTitle{font-size:18px;margin:20px 2px 0;font-weight:900;border-left:5px solid var(--accent);padding-left:10px}.calcPanel{margin:24px 0 20px}.calcPanel .calcTitle{margin:0}.calcPanel p,.sectionDescription{font-size:13px;color:var(--muted);line-height:1.6}.sectionDescription{margin:8px 2px 0}.forwardControls{grid-template-columns:repeat(auto-fit,minmax(185px,1fr));margin:14px 0 6px}.forwardResults,.compareResults{margin-top:8px}.forwardResults{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}.compareControls{grid-template-columns:repeat(4,minmax(0,1fr));margin:14px 0 6px}@media(max-width:560px){.compareControls{grid-template-columns:1fr}}@media(max-width:560px){.forwardControls{grid-template-columns:1fr}}
+.bossHpField{position:relative}.estimateChoice{position:absolute;top:100%;left:0;right:0;z-index:10;margin-top:4px;padding:4px;border:2px solid var(--accent);border-radius:12px;background:#202020;box-shadow:0 7px 20px #000a}.estimateChoice[hidden]{display:none}.estimateChoice button{display:block;width:100%;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:var(--text);text-align:left;font-weight:700;cursor:pointer}.estimateChoice button:hover,.estimateChoice button:focus-visible{background:#3b3b22;outline:2px solid var(--accent)}
+.operationField{position:relative}.operationChoice{position:absolute;top:100%;left:0;right:0;z-index:10;margin-top:4px;padding:4px;border:2px solid var(--accent);border-radius:12px;background:#202020;box-shadow:0 7px 20px #000a}.operationChoice[hidden]{display:none}.operationChoice button{display:block;width:100%;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:var(--text);text-align:left;font-weight:700;cursor:pointer}.operationChoice button:hover,.operationChoice button:focus-visible{background:#3b3b22;outline:2px solid var(--accent)}
+/* Keep the two inverse results balanced. */
+.inverseResults{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* Centered menu and scalable outlined lettering. */
+.hpMenu summary{display:grid;place-items:center;padding:0;gap:0}.hpMenu .menuIcon{width:28px;height:28px;display:block}.head h1{-webkit-text-fill-color:#080808;-webkit-text-stroke:1.5px #fff;paint-order:stroke fill;text-shadow:none}.head h1 .latinTitle{font-family:Arial,sans-serif;font-weight:700;-webkit-text-fill-color:#080808;-webkit-text-stroke:1.5px #fff;paint-order:stroke fill;letter-spacing:.03em;white-space:nowrap}
+
+/* Keep horizontal spacing at 10px and vertical spacing at 20px. */
+.controls,.summary{row-gap:20px;column-gap:10px}
+.controls,.forwardControls,.compareControls{margin:20px 0 0}
+.summary,.forwardResults,.compareResults{margin:20px 0 0}
+.calcTitle{margin:20px 2px 0}
+.calcPanel{margin:20px 0}
+.calcPanel .calcTitle{margin:0}
+.calcPanel{margin-top:30px}
+.sectionDescription,.calcPanel p{margin:6px 2px 0}
+.error{min-height:0;margin:20px 0 0}
+.error:empty{display:none}
+.caption{margin:20px 2px}
+
+.targetField{min-width:0}.targetField label{display:block}.targetPresets{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.targetPresets button{padding:4px 8px;border:2px solid var(--line);border-radius:16px;background:var(--panel);color:var(--text);font:700 11px Arial,sans-serif;cursor:pointer}.targetPresets button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}.extraInverseCard{margin-top:20px;padding:16px;border:2px solid var(--line);border-radius:20px;background:var(--panel)}.extraInverseHead{display:flex;justify-content:space-between;align-items:center;gap:10px}.extraInverseHead h3{margin:0;font-size:17px}.inverseAdd,.extraInverseRemove,.extraInverseReset{margin-top:12px;padding:8px 14px;border:2px solid var(--line);border-radius:24px;background:var(--panel);color:var(--text);font-family:inherit;font-weight:900;font-size:13px;cursor:pointer}.inverseAdd:hover,.extraInverseRemove:hover,.extraInverseReset:hover{border-color:var(--accent)}.extraInverseRemove,.extraInverseReset{margin:0;white-space:nowrap}.extraInverseButtons{display:flex;align-items:center;gap:8px}.extraInverseCard .controls{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}.extraInverseCard .summary{margin-top:20px}.extraInverseCard .error:empty{display:none}.extraOperationChoices{display:flex;gap:5px;margin-top:5px}.extraOperationChoices button{padding:3px 10px;border:1px solid var(--line);border-radius:14px;background:#202020;color:var(--text);cursor:pointer}@media(max-width:560px){.extraInverseCard{padding:12px}.extraInverseHead h3{font-size:15px}.extraInverseCard .controls{grid-template-columns:1fr}}
+.inverseActions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:15px 0 10px;min-height:43px}.inverseHistory{display:flex;gap:10px;align-items:center}.inverseHistory button{width:53px;height:41px;min-width:53px;padding:0;border:0;background:transparent;color:#d9371d;display:grid;place-items:center;cursor:pointer}.inverseHistory svg{display:block;width:70px;height:48px;min-width:70px;overflow:visible;fill:none;stroke:currentColor}.inverseHistory .arrowOutline{stroke-width:6;stroke-linecap:round;stroke-linejoin:round}.inverseHistory .arrowGlyph{stroke-width:10;stroke-linecap:butt;stroke-linejoin:round}.inverseHistory .arrowHead{fill:currentColor;stroke:none}#hpRedo svg{transform:scaleX(-1)}.inverseHistory button:disabled{opacity:.4;cursor:default}.inverseActions .data-transfer{width:auto;margin:0;flex-wrap:nowrap;justify-content:flex-end}.inverseActions .data-transfer>button{border:2px solid var(--line);border-radius:24px;padding:8px 14px;background:var(--panel);color:var(--text);font-weight:900;white-space:nowrap;cursor:pointer}.inverseActions .data-transfer>button:hover{border-color:var(--accent)}.inverseActions .data-transfer-status:not(:empty){position:absolute;right:12px;margin-top:65px;max-width:200px;text-align:right}.firstInverseCard{margin-top:20px}.calcBodyCard{margin-top:20px;padding:16px;border:2px solid var(--line);border-radius:20px;background:var(--panel)}@media(max-width:560px){.calcBodyCard{padding:12px}}.extraInverseCard .operationChoice{top:100%}.extraInverseCard .controls{margin-bottom:0}@media(max-width:560px){.inverseActions{gap:6px}.inverseHistory{gap:6px}.inverseActions .data-transfer>button{padding:8px 10px;font-size:12px}}
+.inverseNameLabel{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:700}.inverseName{width:min(250px,50vw);min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#202020;color:var(--text);font:700 17px Arial,'Zen Kaku Gothic New',sans-serif}.inverseName:focus{outline:2px solid var(--accent)}.extraInverseHead{min-height:35px}
+.inverseTopActions{display:flex;align-items:center;gap:5px}.inverseTopActions .data-transfer{gap:0}.inverseActions{margin:10px 0 0;min-height:41px}.inverseTopActions>button{border:2px solid var(--line);border-radius:24px;padding:8px 14px;background:var(--panel);color:var(--text);font-weight:900;font-size:13px;white-space:nowrap;cursor:pointer}.inverseTopActions>button:hover{border-color:var(--accent)}.inverseActions .data-transfer>button{font-size:13px}.targetPresets.operationChoice{display:block;margin-top:4px;padding:4px;border:2px solid var(--accent);border-radius:12px}.targetPresets.operationChoice[hidden]{display:none}.targetPresets.operationChoice button{display:block;width:100%;padding:9px 12px;border:0;border-radius:8px;background:transparent;color:var(--text);text-align:left;font:700 13px Arial,sans-serif}.targetPresets.operationChoice button:hover,.targetPresets.operationChoice button[aria-pressed="true"]{background:#3b3b22;color:var(--text);outline:0}@media(max-width:560px){.inverseTopActions>button,.inverseActions .data-transfer>button{padding:8px 10px;font-size:12px}.inverseActions{gap:5px}.inverseHistory{gap:5px}}
+.head{margin-bottom:0}.inverseActions{margin:20px 0;min-height:41px}.inverseActions + .calcTitle{margin-top:0}
+.hpImageModal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:18px;background:#000c}.hpImageModal.show{display:flex}.hpImageDialog{width:min(650px,100%);max-height:90vh;overflow:auto;padding:20px;border:2px solid var(--line);border-radius:18px;background:#202020;box-shadow:0 15px 45px #000}.hpImageDialog h2{margin:0 0 12px;font-size:20px}.hpImageDialog img{display:block;width:100%;height:auto;max-height:60vh;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#141414}.hpImageButtons{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:14px}.hpImageButtons button{padding:9px 14px;border:2px solid var(--line);border-radius:24px;background:#101010;color:var(--text);font-weight:900;cursor:pointer}.hpImageButtons button:hover{border-color:var(--accent)}@media(max-width:560px){.hpImageDialog{padding:12px}}
+/* Keep forward calculation result cards in two columns on narrow screens. */
+@media(max-width:560px){.forwardResults{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* On small screens only the mode selectors span both columns. */
+@media(max-width:560px){
+ .firstInverseCard .controls,
+ #extraInverse .extraInverseCard .controls,
+ .forwardControls,
+ .compareControls{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .firstInverseCard .controls>label,
+ #extraInverse .extraInverseCard .controls>label,
+ .forwardControls>label,
+ .forwardControls>.targetField,
+ .compareControls>label{min-width:0;grid-column:auto}
+ .firstInverseCard .controls>label:first-child,
+ #extraInverse .extraInverseCard .controls>label:first-child,
+ .forwardControls>label:first-child,
+ .compareControls>label:nth-child(1),
+ .compareControls>label:nth-child(5){grid-column:1/-1}
+}
+</style><link rel="stylesheet" href="../data-share.css?v=20261120-hp"></head><body><main><header class="head"><h1>危局<span class="latinTitle">HP</span>・スコア計算</h1><details class="hpMenu"><summary aria-label="メニューを開く"><svg class="menuIcon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M6 6H26M6 16H26M6 26H26"/></svg></summary><nav aria-label="関連ページ"><a href="../">ゼンゼロチームビルダー</a><a href="../hp/" aria-current="page">危局HP・スコア計算</a></nav></details></header><div class="inverseActions"><div class="inverseHistory"><button id="hpUndo" type="button" aria-label="戻す" title="戻す"><svg viewBox="0 0 147 110" aria-hidden="true"><path class="arrowOutline" d="M32 21H91A35 35 0 0 1 91 91H69C55 91 44 84 37 72L20 42C13 30 19 21 32 21Z"/><g transform="translate(12 -1) translate(65 53) scale(0.8) translate(-65 -53)"><path class="arrowGlyph" d="M56 43H74A15 15 0 0 1 74 73H56"/><path class="arrowHead" d="M36 43L57 30.876L57 55.124Z"/></g></svg></button><button id="hpRedo" type="button" aria-label="やり直す" title="やり直す"><svg viewBox="0 0 147 110" aria-hidden="true"><path class="arrowOutline" d="M32 21H91A35 35 0 0 1 91 91H69C55 91 44 84 37 72L20 42C13 30 19 21 32 21Z"/><g transform="translate(12 -1) translate(65 53) scale(0.8) translate(-65 -53)"><path class="arrowGlyph" d="M56 43H74A15 15 0 0 1 74 73H56"/><path class="arrowHead" d="M36 43L57 30.876L57 55.124Z"/></g></svg></button></div><div class="inverseTopActions"><div class="data-transfer" id="hp-transfer" aria-label="危局HPデータの共有"></div><button id="saveHpImage" type="button">画像保存</button></div></div>
+<h2 class="calcTitle">ボスHP逆算</h2><p class="sectionDescription">攻撃前後のスコアとその攻撃のダメージ量からおおよそのボスHPを算出</p>
+
+<div class="extraInverseCard firstInverseCard" aria-label="ボスHP逆算 1"><div class="extraInverseHead"><label class="inverseNameLabel"><input id="firstInverseName" class="inverseName" maxlength="40" aria-label="ボス1の名前" value="ボス1"></label><button type="button" class="extraInverseReset" id="resetFirstInverse">リセット</button></div><section class="controls" aria-label="逆算条件"><label>危局モード<select id="preset"><option value="2025" selected>試練</option><option value="2026">逆境</option></select></label><label>攻撃前の合計スコア<input id="before" type="number" min="0" step="1" inputmode="numeric" value="0"></label><label>攻撃後の合計スコア<input id="after" type="number" min="0" step="1" inputmode="numeric" value="0"></label><label>攻撃のダメージ量<input id="attack" type="number" min="0" step="1" inputmode="numeric" value="0"></label><label class="operationField">操作スコア（最大5,000）<input id="operation" type="number" min="0" max="5000" step="1" inputmode="numeric" value="0" autocomplete="off"><span id="operationChoice" class="operationChoice" hidden><button type="button" data-operation-value="0" data-operation-target="operation">0</button><button type="button" data-operation-value="5000" data-operation-target="operation">5000</button></span></label></section><div class="error" id="error" role="status"></div><section class="summary inverseResults"><div class="stat primary"><span>ボスHP</span><strong id="total">—</strong></div><div class="stat"><span>削ったHP割合</span><strong id="fraction">—</strong></div></section></div><div id="extraInverse" aria-live="polite"></div><button type="button" id="addInverse" class="inverseAdd">＋ ボスを追加</button><section class="calcPanel"><h2 class="calcTitle">目標スコアまでの残りHP</h2><p>ボスHPと現在のスコアから目標スコアまでに削るHPを算出</p><div class="calcBodyCard"><div class="controls forwardControls"><label>危局モード<select id="forwardPreset"><option value="2025" selected>試練</option><option value="2026">逆境</option></select></label><label class="bossHpField">ボスHP<input id="bossTotal" type="number" min="0" step="1" inputmode="numeric" autocomplete="off" value="0"><span id="estimateChoice" class="estimateChoice" role="group" aria-label="逆算したボスHPの候補" hidden></span></label><label>現在の合計スコア<input id="currentScore" type="number" min="0" step="1" inputmode="numeric" value="0"></label><div class="targetField operationField"><label>目標の合計スコア<input id="targetScore" type="number" min="0" step="1" inputmode="numeric" placeholder="例: 40,000" autocomplete="off"></label><div id="targetPresets" class="targetPresets operationChoice" role="group" aria-label="目標スコアの候補" hidden><button type="button" data-target-score="20000">20,000</button><button type="button" data-target-score="30000">30,000</button><button type="button" data-target-score="65000">65,000</button></div></div><label class="operationField">操作スコア（最大5,000）<input id="forwardOperation" type="number" min="0" max="5000" step="1" inputmode="numeric" value="0" autocomplete="off"><span id="forwardOperationChoice" class="operationChoice" hidden><button type="button" data-operation-value="0" data-operation-target="forwardOperation">0</button><button type="button" data-operation-value="5000" data-operation-target="forwardOperation">5000</button></span></label></div><div class="error" id="forwardError" role="status"></div><div class="summary forwardResults"><div class="stat primary"><span>目標スコアまでの残りHP</span><strong id="toCap">—</strong></div><div class="stat"><span>削ったHP</span><strong id="alreadyDealt">—</strong></div><div class="stat"><span>残りHPの割合</span><strong id="damageScore">—</strong></div><div class="stat"><span>削ったHP割合</span><strong id="scoreLeft">—</strong></div></div><div class="error" id="targetError" role="status"></div></div></section><section class="calcPanel comparePanel"><h2 class="calcTitle">ボスHP増加後の推定スコア</h2><p>変化前のボスHPとスコアを入力することでボスHP変化後のスコアを算出</p><div class="calcBodyCard"><div class="controls compareControls"><label>ボス(比較元)の危局モード<select id="compareSourcePreset"><option value="2025" selected>試練</option><option value="2026">逆境</option></select></label><label class="bossHpField">ボス(比較元)の総HP<input id="compareSourceHp" type="number" min="0" step="1" inputmode="numeric" value="0"><span id="compareSourceHpChoice" class="estimateChoice" role="group" aria-label="比較元に使用する逆算済みボスHPの候補" hidden></span></label><label>ボス(比較元)の合計スコア<input id="compareSourceScore" type="number" min="0" step="1" inputmode="numeric" value="0"></label><label class="operationField">ボス(比較元)の操作スコア<input id="compareSourceOperation" type="number" min="0" max="5000" step="1" inputmode="numeric" value="0" autocomplete="off"><span id="compareSourceOperationChoice" class="operationChoice" hidden><button type="button" data-operation-value="0">0</button><button type="button" data-operation-value="5000">5000</button></span></label><label>ボス(比較先)の危局モード<select id="compareTargetPreset"><option value="2025" selected>試練</option><option value="2026">逆境</option></select></label><label class="bossHpField">ボス(比較先)の総HP<input id="compareTargetHp" type="number" min="0" step="1" inputmode="numeric" value="0"><span id="compareTargetHpChoice" class="estimateChoice" role="group" aria-label="比較先に使用する逆算済みボスHPの候補" hidden></span></label><label class="operationField">ボス(比較先)の操作スコア<input id="compareTargetOperation" type="number" min="0" max="5000" step="1" inputmode="numeric" value="0" autocomplete="off"><span id="compareTargetOperationChoice" class="operationChoice" hidden><button type="button" data-operation-value="0">0</button><button type="button" data-operation-value="5000">5000</button></span></label></div><div class="error" id="compareError" role="status"></div><div class="summary compareResults"><div class="stat primary"><span>ボス(比較先)の合計スコア</span><strong id="compareTargetScore">—</strong></div><div class="stat"><span>ボス(比較先)のダメージスコア</span><strong id="compareTargetDamageScore">—</strong></div><div class="stat"><span>削ったHP</span><strong id="compareDealtHp">—</strong></div><div class="stat"><span>ボス(比較元)の合計スコアとの差</span><strong id="compareDifference">—</strong></div></div></div></section><p class="caption">使用させていただいた検証データ：<a href="https://x.com/voya_zzz/status/1958504907088302241" target="_blank" rel="noopener noreferrer">試練のHP・スコア検証（@voya_zzz）</a> ／ <a href="https://x.com/voya_zzz/status/2082480583440298411" target="_blank" rel="noopener noreferrer">逆境のHP・スコア検証（@voya_zzz）</a></p><footer style="margin:24px 2px 0;color:var(--muted);font-size:11px;line-height:1.6">本サイトは『ゼンレスゾーンゼロ』の非公式ファンメイドツール（二次創作）であり、HoYoverseおよび株式会社COGNOSPHEREとは関係ありません。 © All rights reserved by miHoYo. Other properties belong to their respective owners.</footer></main><div id="hpImageModal" class="hpImageModal" role="dialog" aria-modal="true" aria-label="危局HP画像" aria-hidden="true"><div class="hpImageDialog"><h2>危局HP画像</h2><img id="hpImagePreview" alt="各ボスの名前と逆算したHPの画像"><div class="hpImageButtons"><button id="closeHpImage" type="button">閉じる</button><button id="shareHpImage" type="button">共有</button><button id="downloadHpImage" type="button">画像を保存</button></div></div></div><script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script><script src="../data-transfer.js?v=20261120-hp"></script><script>
+const presets={2026:[[24,21,9,395,750],[20,17,9,395,1000],[16,15,9,395,1500],[14,12,3,79,3500],[11,11,3,79,3500],[10,10,4,79,3500],[9,3,5,79,3500],[2,1,5,79,4000]],2025:[[29,26,6,437,1000],[25,22,17,874,1200],[21,18,11,437,1800],[17,14,25,874,2400],[13,10,15,437,2600],[9,7,25,437,2600],[6,1,25,437,2700]]};
+const $=id=>document.getElementById(id),fmt=n=>new Intl.NumberFormat('ja-JP',{maximumFractionDigits:2}).format(n);
+const storageKey='zzz-deadly-hp-inverse-v1';
+const fields=['preset','before','after','attack','operation','forwardPreset','bossTotal','currentScore','forwardOperation','targetScore','compareSourcePreset','compareSourceHp','compareSourceScore','compareSourceOperation','compareTargetPreset','compareTargetHp','compareTargetOperation'];
+try{const saved=JSON.parse(localStorage.getItem(storageKey));if(saved)for(const id of fields)if(saved[id]!=null)$(id).value=saved[id]}catch{}
+try{if(!localStorage.getItem('zzz-deadly-hp-defaults-v2')){for(const id of ['preset','forwardPreset'])$(id).value='2025';for(const id of ['operation','forwardOperation'])$(id).value='0';localStorage.setItem('zzz-deadly-hp-defaults-v2','1')}}catch{}
+try{
+ if(!localStorage.getItem('zzz-deadly-hp-number-defaults-v3')){
+  for(const id of ['before','after','attack','operation','bossTotal','currentScore','forwardOperation','targetScore'])$(id).value='0';
+  localStorage.setItem('zzz-deadly-hp-number-defaults-v3','1');
+ }
+}catch{}
+// Ignore obsolete or corrupted saved mode identifiers.
+for(const id of fields.filter(id=>$(id).tagName==='SELECT'))if(!Object.hasOwn(presets,$(id).value))$(id).value='2025';
+let estimatedHp=0;
+const numericText=value=>/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value);
+function readNumber(id){const value=$(id).value.replace(/,/g,'');return numericText(value)?Number(value):NaN}
+function formatInput(el){
+ const value=el.value;
+ if(!numericText(value))return;
+ const [integer,decimal]=value.split('.');
+ el.value=integer.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(decimal===undefined?'':'.'+decimal);
+}
+
+for(const id of fields.filter(id=>$(id).tagName==='INPUT')){
+ const el=$(id);el.type='text';
+ el.addEventListener('focus',()=>{normalizeNumber(el);el.select()});
+ // Preserve the browser's in-progress text, especially during IME conversion.
+ el.addEventListener('compositionend',()=>{setTimeout(commitLimits,0)});
+}
+for(const [fieldId,choiceId] of [['bossTotal','estimateChoice'],['compareSourceHp','compareSourceHpChoice'],['compareTargetHp','compareTargetHpChoice']]){
+ const input=$(fieldId),choice=$(choiceId);
+ input.addEventListener('focus',refreshEstimatedChoices);
+ input.addEventListener('blur',()=>setTimeout(()=>{choice.hidden=true},150));
+ choice.addEventListener('pointerdown',event=>{if(event.target.closest('button'))event.preventDefault()});
+ choice.addEventListener('click',event=>{
+  const button=event.target.closest('button[data-hp-source]');
+  if(!button)return;
+  const hp=Number(button.dataset.hp);
+  if(!Number.isSafeInteger(hp)||hp<=0)return;
+  input.value=String(hp);
+  choice.hidden=true;
+  commitLimits();
+  choice.hidden=true;
+ });
+}
+for(const [id,choice] of [['operation','operationChoice'],['forwardOperation','forwardOperationChoice'],['compareSourceOperation','compareSourceOperationChoice'],['compareTargetOperation','compareTargetOperationChoice']]){
+ $(id).addEventListener('focus',()=>{$(choice).hidden=false});
+ $(id).addEventListener('blur',()=>setTimeout(()=>{$(choice).hidden=true},150));
+ for(const button of $(choice).querySelectorAll('button')){
+  button.addEventListener('pointerdown',event=>event.preventDefault());
+  button.addEventListener('click',()=>{
+   $(id).value=button.dataset.operationValue;
+   $(choice).hidden=true;
+   commitLimits();
+   $(choice).hidden=true;
+  });
+ }
+}
+$('targetScore').addEventListener('focus',()=>{$('targetPresets').hidden=false});
+$('targetScore').addEventListener('blur',()=>setTimeout(()=>{$('targetPresets').hidden=true},150));
+for(const button of document.querySelectorAll('[data-target-score]')){
+ button.addEventListener('pointerdown',event=>event.preventDefault());
+ button.addEventListener('click',()=>{
+  const score=Number(button.dataset.targetScore);
+  if(score===65000){
+   $('forwardOperation').value='5000';
+   if(readNumber('currentScore')<5000)$('currentScore').value='5000';
+  }
+  $('targetScore').value=String(score);
+  $('targetPresets').hidden=true;
+  commitLimits();
+ });
+}
+for(const id of fields.filter(id=>$(id).tagName==='INPUT')){
+ $(id).addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();commitLimits();$(id).blur()}});
+ $(id).addEventListener('change',commitLimits);
+ $(id).addEventListener('blur',commitLimits);
+}
+function normalizeNumber(el){
+ const normalized=el.value.normalize('NFKC').replace(/[,，\s]/g,'');
+ if(normalized!==el.value){
+  const start=el.selectionStart,end=el.selectionEnd;
+  const left=el.value.slice(0,start).normalize('NFKC').replace(/[,，\s]/g,'').length;
+  const right=el.value.slice(0,end).normalize('NFKC').replace(/[,，\s]/g,'').length;
+  el.value=normalized;el.setSelectionRange(left,right);
+ }
+}
+function refreshEstimatedChoices(){
+ const entries=[];
+ const firstHp=estimatedHp;
+ if(Number.isSafeInteger(firstHp)&&firstHp>0)entries.push({name:$('firstInverseName').value.trim()||'ボス1',hp:firstHp});
+ document.querySelectorAll('#extraInverse [data-extra-index]').forEach((card,index)=>{
+  const hpText=card.querySelector('[data-total]')?.textContent||'';
+  const hp=Number(hpText.replace(/,/g,''));
+  if(hpText!=='—'&&Number.isSafeInteger(hp)&&hp>0){
+   entries.push({name:card.querySelector('[data-field="name"]').value.trim()||'ボス'+(index+2),hp});
+  }
+ });
+ for(const [fieldId,choiceId] of [['bossTotal','estimateChoice'],['compareSourceHp','compareSourceHpChoice'],['compareTargetHp','compareTargetHpChoice']]){
+  const choice=$(choiceId);
+  choice.replaceChildren();
+  entries.forEach(({name,hp},index)=>{
+   const button=document.createElement('button');
+   button.type='button';
+   button.dataset.hpSource=String(index);
+   button.dataset.hp=String(hp);
+   button.textContent=name+'：'+fmt(hp)+' HP';
+   choice.append(button);
+  });
+  choice.hidden=!entries.length||document.activeElement!==$(fieldId);
+ }
+}
+function scoreAtFraction(fraction,rows){
+ if(fraction<=0)return 0;
+ let usedScore=0,usedShare=0;
+ for(const row of rows){
+  if(fraction<=usedShare+row.share+1e-12)return Math.min(60000,usedScore+Math.max(0,fraction-usedShare)/row.share*row.points);
+  usedShare+=row.share;usedScore+=row.points;
+ }
+ return 60000;
+}
+function rowsFor(p){const a=[];for(const [hi,lo,num,den,points]of presets[p])for(let gauge=hi;gauge>=lo;gauge--)a.push({gauge,num,den,points,share:num/den});return a}
+function fractionAtScore(score,rows){if(score<=0)return 0;if(score>=60000)return 1;let used=0,share=0;for(const row of rows){if(score<=used+row.points)return share+Math.max(0,score-used)/row.points*row.share;used+=row.points;share+=row.share}return 1}
+function capInput(id,max){const el=$(id);el.max=String(max);if(el.value!==''&&numericText(el.value)&&Number(el.value)>max)el.value=String(max)}
+function commitLimits(){
+ for(const id of fields.filter(id=>$(id).tagName==='INPUT'))normalizeNumber($(id));
+ for(const id of ['operation','forwardOperation','compareSourceOperation','compareTargetOperation'])capInput(id,5000);
+ const operation=Math.min(5000,Math.max(0,readNumber('operation')||0)),forwardOperation=Math.min(5000,Math.max(0,readNumber('forwardOperation')||0));
+ for(const id of ['before','after'])capInput(id,Math.max(0,operation)+60000);
+ capInput('currentScore',Math.max(0,forwardOperation)+60000);
+  capInput('targetScore',Math.max(0,forwardOperation)+60000);
+capInput('compareSourceScore',Math.min(5000,Math.max(0,readNumber('compareSourceOperation')||0))+60000);
+ for(const id of fields.filter(id=>$(id).tagName==='INPUT'))formatInput($(id));
+ calculate();
+}
+function calculate(){
+const operation=Math.min(5000,readNumber('operation'));
+const forwardOperation=Math.min(5000,readNumber('forwardOperation'));
+const rows=rowsFor($('preset').value);
+const scoreMax=Math.max(0,operation)+60000;
+const before=Math.min(scoreMax,readNumber('before')),after=Math.min(scoreMax,readNumber('after')),attack=readNumber('attack');
+const hasInverse=['before','after','attack','operation'].every(id=>$(id).value!=='')&&['before','after','attack'].some(id=>readNumber(id)!==0);
+let err='';
+if(hasInverse){
+ if(!Number.isFinite(readNumber('before'))||!Number.isFinite(readNumber('after'))||!Number.isFinite(readNumber('operation'))||!Number.isFinite(before)||!Number.isFinite(after)||!Number.isFinite(attack)||!Number.isFinite(operation))err='数値を確認してください。';
+ else if(operation<0)err='操作スコアは0以上にしてください。';
+ else if(before<operation)err='攻撃前スコアが操作スコアより小さくなっています。';
+ else if(after<=before)err='攻撃後スコアは攻撃前より大きい数値にしてください。カンスト後の攻撃からは逆算できません。';
+ else if(after-operation>=60000)err='攻撃後にダメージスコアがカンストしているため、超過ダメージが分からずボスHPを逆算できません。';
+ else if(attack<=0)err='攻撃ダメージは0より大きい数値にしてください。';
+}
+const validInverse=hasInverse&&!err;
+const f0=validInverse?fractionAtScore(before-operation,rows):0,f1=validInverse?fractionAtScore(after-operation,rows):0;
+const delta=f1-f0,total=validInverse&&delta>0?attack/delta:0;
+if(total&&!Number.isSafeInteger(Math.round(total)))err='算出されるHPが大きすぎます。入力値を確認してください。';
+const usableTotal=total>0&&Number.isSafeInteger(Math.round(total));
+$('error').textContent=err;
+$('total').textContent=usableTotal?fmt(Math.round(total)):'—';
+$('fraction').textContent=usableTotal?fmt(delta*100)+'%':'—';
+estimatedHp=usableTotal?Math.round(total):0;
+refreshEstimatedChoices();
+const forwardRows=rowsFor($('forwardPreset').value);
+const bossTotal=readNumber('bossTotal'),current=Math.min(Math.max(0,forwardOperation)+60000,readNumber('currentScore'));
+const hasForward=$('bossTotal').value!==''&&$('currentScore').value!==''&&$('forwardOperation').value!==''&&(bossTotal!==0||current!==0);
+let forwardError='';
+if(hasForward){
+ if(!Number.isSafeInteger(Math.round(bossTotal)))forwardError='ボスHPに有効な数値を入力してください。大きすぎる数値は計算できません。';
+ else if(bossTotal<=0)forwardError='ボスHPは0より大きい数値にしてください。';
+ else if(!Number.isFinite(readNumber('currentScore'))||!Number.isFinite(readNumber('forwardOperation')))forwardError='合計スコアと操作スコアに有効な数値を入力してください。';
+ else if(forwardOperation<0||current<forwardOperation)forwardError='現在の合計スコアは操作スコア以上にしてください。';
+}
+const validForward=hasForward&&!forwardError;
+const damageScore=validForward?Math.min(60000,Math.max(0,current-forwardOperation)):0;
+const remainingShare=validForward?Math.min(1,Math.max(0,1-fractionAtScore(damageScore,forwardRows))):0;
+const remaining=validForward?Math.max(0,bossTotal*remainingShare):0;
+ const targetText=$('targetScore').value;
+ for(const button of document.querySelectorAll('[data-target-score]'))button.setAttribute('aria-pressed',String(Number(button.dataset.targetScore)===readNumber('targetScore')&&targetText!==''));
+ const target=readNumber('targetScore');
+ let targetError='';
+ if(targetText!==''&&validForward){
+  if(!Number.isFinite(target)||target<0)targetError='目標スコアに有効な数値を入力してください。';
+  else if(target<current)targetError='目標スコアは現在の合計スコア以上にしてください。';
+  else if(target>forwardOperation+60000)targetError='目標スコアはカンストスコア以下にしてください。';
+ }
+ const neededHp=targetText!==''&&validForward&&!targetError?
+  Math.max(0,bossTotal*(fractionAtScore(target-forwardOperation,forwardRows)-fractionAtScore(damageScore,forwardRows))):0;
+ $('targetError').textContent=targetError;
+ $('toCap').textContent=targetText!==''&&validForward&&!targetError?fmt(Math.round(neededHp)):'—';
+$('forwardError').textContent=forwardError;
+
+$('alreadyDealt').textContent=validForward?fmt(Math.round(bossTotal-remaining)):'—';
+$('damageScore').textContent=validForward?fmt(remainingShare*100)+'%':'—';
+$('scoreLeft').textContent=validForward?fmt((1-remainingShare)*100)+'%':'—';
+const sourceHp=readNumber('compareSourceHp'),targetHp=readNumber('compareTargetHp');
+const sourceOperation=Math.min(5000,readNumber('compareSourceOperation'));
+const targetOperation=Math.min(5000,readNumber('compareTargetOperation'));
+const sourceScore=Math.min(Math.max(0,sourceOperation)+60000,readNumber('compareSourceScore'));
+const compareStarted=sourceHp!==0||targetHp!==0||sourceScore!==0||sourceOperation!==0||targetOperation!==0;
+let compareError='',dealtHp=0,targetDamage=0,targetScore=0;
+if(compareStarted){
+ if(!Number.isSafeInteger(Math.round(sourceHp))||!Number.isSafeInteger(Math.round(targetHp)))compareError='両方のボスHPに有効な数値を入力してください。大きすぎる数値は計算できません。';
+ else if(sourceHp<=0||targetHp<=0)compareError='両方のボスHPは0より大きい数値にしてください。';
+ else if(!Number.isFinite(readNumber('compareSourceScore'))||!Number.isFinite(readNumber('compareSourceOperation'))||!Number.isFinite(readNumber('compareTargetOperation')))compareError='合計スコアと操作スコアに有効な数値を入力してください。';
+ else if(sourceOperation<0||targetOperation<0)compareError='操作スコアは0以上にしてください。';
+ else if(sourceScore<sourceOperation)compareError='元の合計スコアは操作スコア以上にしてください。';
+ else{
+  dealtHp=sourceHp*fractionAtScore(sourceScore-sourceOperation,rowsFor($('compareSourcePreset').value));
+  if(dealtHp>targetHp+Math.max(1e-8,targetHp*Number.EPSILON*16))compareError='削ったHP量が比較先のボスHPを超えるため、同じHP量は削れません。';
+  else{
+   targetDamage=Math.round(scoreAtFraction(Math.min(1,dealtHp/targetHp),rowsFor($('compareTargetPreset').value)));
+   targetScore=targetDamage+targetOperation;
+  }
+ }
+}
+$('compareError').textContent=compareError;
+$('compareTargetScore').textContent=compareStarted&&!compareError?fmt(targetScore):'—';
+$('compareTargetDamageScore').textContent=compareStarted&&!compareError?fmt(targetDamage):'—';
+$('compareDealtHp').textContent=compareStarted&&dealtHp>0?fmt(Math.round(dealtHp)):compareStarted&&!compareError?'0':'—';
+$('compareDifference').textContent=compareStarted&&!compareError?(targetScore-sourceScore>=0?'+':'')+fmt(targetScore-sourceScore):'—';
+try{localStorage.setItem(storageKey,JSON.stringify(hpInputs()))}catch{}
+}
+for(const id of fields)$(id).addEventListener('input',event=>{if(!event.isComposing)calculate()});
+function hpInputs(){
+ return Object.fromEntries(fields.map(id=>[id,$(id).value.replace(/,/g,'')]));
+}
+
+const firstNameKey='zzz-deadly-hp-first-name-v1';
+try{$('firstInverseName').value=localStorage.getItem(firstNameKey)||'ボス1'}catch{}
+$('firstInverseName').addEventListener('input',()=>{try{localStorage.setItem(firstNameKey,$('firstInverseName').value)}catch{}refreshEstimatedChoices()});
+$('firstInverseName').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();event.target.blur()}});
+const extraKey='zzz-deadly-hp-extra-inverses-v1';
+let extraInverses=[];
+try{
+ const saved=JSON.parse(localStorage.getItem(extraKey));
+ if(Array.isArray(saved))extraInverses=saved.slice(0,30).filter(v=>v&&typeof v==='object').map((v,index)=>({
+  preset:v.preset==='2026'?'2026':'2025',
+  before:String(v.before??'0').replace(/[^\d.,-]/g,''),
+  after:String(v.after??'0').replace(/[^\d.,-]/g,''),
+  attack:String(v.attack??'0').replace(/[^\d.,-]/g,''),
+  operation:String(v.operation??'0').replace(/[^\d.,-]/g,''),name:String(v.name||'ボス'+(index+2)).slice(0,40)
+ }));
+}catch{}
+const extraFields=['before','after','attack','operation'];
+function saveExtra(){try{localStorage.setItem(extraKey,JSON.stringify(extraInverses))}catch{}}
+function updateExtra(card,index){
+ const item=extraInverses[index];
+ const get=name=>card.querySelector('[data-field="'+name+'"]');
+ for(const key of ['preset','name',...extraFields])item[key]=get(key).value;
+ const read=key=>{const value=get(key).value.replace(/,/g,'');return numericText(value)?Number(value):NaN};
+ const operation=Math.min(5000,read('operation'));
+ const scoreMax=Math.max(0,operation)+60000;
+ const before=Math.min(scoreMax,read('before')),after=Math.min(scoreMax,read('after')),attack=read('attack');
+ const hasInverse=extraFields.every(key=>get(key).value!=='')&&['before','after','attack'].some(key=>read(key)!==0);
+ let error='';
+ if(hasInverse){
+  if(!Number.isFinite(read('before'))||!Number.isFinite(read('after'))||!Number.isFinite(read('operation'))||!Number.isFinite(before)||!Number.isFinite(after)||!Number.isFinite(attack)||!Number.isFinite(operation))error='数値を確認してください。';
+  else if(operation<0)error='操作スコアは0以上にしてください。';
+  else if(before<operation)error='攻撃前スコアが操作スコアより小さくなっています。';
+  else if(after<=before)error='攻撃後スコアは攻撃前より大きい数値にしてください。カンスト後の攻撃からは逆算できません。';
+  else if(after-operation>=60000)error='攻撃後にダメージスコアがカンストしているため、超過ダメージが分からずボスHPを逆算できません。';
+  else if(attack<=0)error='攻撃ダメージは0より大きい数値にしてください。';
+ }
+ const valid=hasInverse&&!error,rows=rowsFor(item.preset);
+ const delta=valid?fractionAtScore(after-operation,rows)-fractionAtScore(before-operation,rows):0;
+ const total=valid&&delta>0?attack/delta:0;
+ if(total&&!Number.isSafeInteger(Math.round(total)))error='算出されるHPが大きすぎます。入力値を確認してください。';
+ const usable=total>0&&Number.isSafeInteger(Math.round(total));
+ card.querySelector('[data-error]').textContent=error;
+ card.querySelector('[data-total]').textContent=usable?fmt(Math.round(total)):'—';
+ card.querySelector('[data-fraction]').textContent=usable?fmt(delta*100)+'%':'—';
+ refreshEstimatedChoices();
+ saveExtra();
+}
+function commitExtra(card,index){
+ for(const key of extraFields)normalizeNumber(card.querySelector('[data-field="'+key+'"]'));
+ const operation=card.querySelector('[data-field="operation"]');
+ if(operation.value!==''&&numericText(operation.value)&&Number(operation.value)>5000)operation.value='5000';
+ const limit=Math.max(0,Math.min(5000,Number(operation.value)||0))+60000;
+ for(const key of ['before','after']){
+  const el=card.querySelector('[data-field="'+key+'"]');
+  if(el.value!==''&&numericText(el.value)&&Number(el.value)>limit)el.value=String(limit);
+ }
+ for(const key of extraFields)formatInput(card.querySelector('[data-field="'+key+'"]'));
+ updateExtra(card,index);
+}
+function renderExtra(){
+ const root=$('extraInverse');
+ root.innerHTML=extraInverses.map((_,index)=>`<section class="extraInverseCard" data-extra-index="${index}" aria-label="ボス${index+2}">
+  <div class="extraInverseHead"><label class="inverseNameLabel"><input data-field="name" class="inverseName" maxlength="40" aria-label="ボス${index+2}の名前"></label><div class="extraInverseButtons"><button type="button" class="extraInverseReset" data-reset>リセット</button><button type="button" class="extraInverseRemove" data-remove>削除</button></div></div>
+  <div class="controls"><label>危局モード<select data-field="preset"><option value="2025">試練</option><option value="2026">逆境</option></select></label>
+  <label>攻撃前の合計スコア<input data-field="before" type="text" inputmode="numeric"></label>
+  <label>攻撃後の合計スコア<input data-field="after" type="text" inputmode="numeric"></label>
+  <label>攻撃のダメージ量<input data-field="attack" type="text" inputmode="numeric"></label>
+  <label class="operationField">操作スコア（最大5,000）<input data-field="operation" type="text" inputmode="numeric" autocomplete="off"><span class="operationChoice" data-operation-choice hidden><button type="button" data-operation-preset="0">0</button><button type="button" data-operation-preset="5000">5000</button></span></label></div>
+  <div class="error" data-error role="status"></div><div class="summary inverseResults">
+  <div class="stat primary"><span>ボスHP</span><strong data-total>—</strong></div>
+  <div class="stat"><span>削ったHP割合</span><strong data-fraction>—</strong></div></div></section>`).join('');
+ root.querySelectorAll('[data-extra-index]').forEach((card,index)=>{
+  const item=extraInverses[index];
+  for(const key of ['preset','name',...extraFields])card.querySelector('[data-field="'+key+'"]').value=item[key]??'';
+  commitExtra(card,index);
+ });
+}
+$('resetFirstInverse').addEventListener('click',()=>{
+ $('firstInverseName').value='ボス1';
+ try{localStorage.setItem(firstNameKey,'ボス1')}catch{}
+ $('preset').value='2025';
+ for(const id of ['before','after','attack','operation'])$(id).value='0';
+ commitLimits();
+ hpRecord();
+});
+$('addInverse').addEventListener('click',()=>{
+ if(extraInverses.length>=30)return;
+ extraInverses.push({preset:'2025',before:'0',after:'0',attack:'0',operation:'0',name:'ボス'+(extraInverses.length+2)});
+ renderExtra();saveExtra();
+});
+$('extraInverse').addEventListener('click',event=>{
+ const card=event.target.closest('[data-extra-index]');
+ if(!card)return;
+ const index=Number(card.dataset.extraIndex);
+ if(event.target.closest('[data-remove]')){extraInverses.splice(index,1);renderExtra();saveExtra();return}
+ if(event.target.closest('[data-reset]')){
+  const defaults={preset:'2025',name:'ボス'+(index+2),before:'0',after:'0',attack:'0',operation:'0'};
+  extraInverses[index]=defaults;
+  for(const key of ['preset','name',...extraFields])card.querySelector('[data-field="'+key+'"]').value=defaults[key];
+  updateExtra(card,index);
+  hpRecord();
+  return;
+ }
+ const button=event.target.closest('[data-operation-preset]');
+ if(button){card.querySelector('[data-field="operation"]').value=button.dataset.operationPreset;card.querySelector('[data-operation-choice]').hidden=true;commitExtra(card,index)}
+});
+$('extraInverse').addEventListener('focusin',event=>{
+ if(event.target.matches('[data-field="operation"]'))event.target.closest('.operationField').querySelector('[data-operation-choice]').hidden=false;
+ if(event.target.matches('[data-field="before"],[data-field="after"],[data-field="attack"],[data-field="operation"]')){normalizeNumber(event.target);event.target.select()}
+});
+$('extraInverse').addEventListener('focusout',event=>{
+ if(event.target.matches('[data-field="operation"]'))setTimeout(()=>{event.target.closest('.operationField').querySelector('[data-operation-choice]').hidden=true},150);
+ if(event.target.matches('[data-field="before"],[data-field="after"],[data-field="attack"],[data-field="operation"]')){const card=event.target.closest('[data-extra-index]');commitExtra(card,Number(card.dataset.extraIndex))}
+});
+$('extraInverse').addEventListener('pointerdown',event=>{if(event.target.closest('[data-operation-preset]'))event.preventDefault()});
+$('extraInverse').addEventListener('input',event=>{
+ const card=event.target.closest('[data-extra-index]');
+ if(card){if(event.isComposing)return;updateExtra(card,Number(card.dataset.extraIndex))}
+});
+$('extraInverse').addEventListener('keydown',event=>{
+ if(event.key==='Enter'&&!event.isComposing&&event.target.matches('[data-field="name"]')){event.preventDefault();event.target.blur();return}
+ if(event.key==='Enter'&&!event.isComposing&&event.target.matches('[data-field="before"],[data-field="after"],[data-field="attack"],[data-field="operation"]')){
+  event.preventDefault();
+  const card=event.target.closest('[data-extra-index]');
+  commitExtra(card,Number(card.dataset.extraIndex));
+  event.target.blur();
+ }
+});
+$('extraInverse').addEventListener('change',event=>{
+ const card=event.target.closest('[data-extra-index]');
+ if(card)commitExtra(card,Number(card.dataset.extraIndex));
+});
+$('extraInverse').addEventListener('compositionend',event=>{
+ const card=event.target.closest('[data-extra-index]');
+ if(card&&event.target.matches('[data-field="before"],[data-field="after"],[data-field="attack"],[data-field="operation"]'))setTimeout(()=>commitExtra(card,Number(card.dataset.extraIndex)),0);
+});
+
+renderExtra();
+commitLimits();
+
+const hpState=()=>({fields:hpInputs(),firstName:$('firstInverseName').value,extra:extraInverses.map(item=>({...item}))});
+let hpCurrent=JSON.stringify(hpState()),hpPast=[],hpFuture=[],hpRestoring=false;
+function hpButtons(){$('hpUndo').disabled=!hpPast.length;$('hpRedo').disabled=!hpFuture.length}
+function hpRecord(){
+ if(hpRestoring)return;
+ const next=JSON.stringify(hpState());
+ if(next===hpCurrent)return;
+ hpPast.push(hpCurrent);
+ if(hpPast.length>50)hpPast.shift();
+ hpCurrent=next;hpFuture=[];hpButtons();
+}
+function hpRestore(json){
+ hpRestoring=true;
+ try{
+  const data=JSON.parse(json);
+  for(const id of fields)$(id).value=data.fields[id];
+  $('firstInverseName').value=data.firstName;
+  try{localStorage.setItem(firstNameKey,data.firstName)}catch{}
+  extraInverses=data.extra.map(item=>({...item}));
+  renderExtra();
+  commitLimits();
+  saveExtra();
+ }finally{hpRestoring=false}
+}
+$('hpUndo').addEventListener('click',()=>{
+ if(!hpPast.length)return;
+ hpFuture.push(hpCurrent);hpCurrent=hpPast.pop();hpRestore(hpCurrent);hpButtons();
+});
+$('hpRedo').addEventListener('click',()=>{
+ if(!hpFuture.length)return;
+ hpPast.push(hpCurrent);hpCurrent=hpFuture.pop();hpRestore(hpCurrent);hpButtons();
+});
+let hpEditingTarget=null;
+document.addEventListener('input',event=>{
+ if(!event.target.matches('#firstInverseName,[data-field],#preset,#before,#after,#attack,#operation,#forwardPreset,#bossTotal,#currentScore,#forwardOperation,#targetScore,#compareSourcePreset,#compareSourceHp,#compareSourceScore,#compareSourceOperation,#compareTargetPreset,#compareTargetHp,#compareTargetOperation'))return;
+ const next=JSON.stringify(hpState());
+ if(next===hpCurrent)return;
+ if(hpEditingTarget===event.target){hpCurrent=next;hpFuture=[];hpButtons()}
+ else{hpRecord();hpEditingTarget=event.target}
+});
+document.addEventListener('focusout',event=>{if(hpEditingTarget===event.target)hpEditingTarget=null});
+document.addEventListener('change',hpRecord);
+document.addEventListener('click',event=>{
+ if(event.target.closest('#addInverse,[data-remove],[data-operation-preset],[data-operation-value],[data-target-score],[data-hp-source]'))hpRecord();
+});
+document.addEventListener('keydown',event=>{
+ if(!(event.ctrlKey||event.metaKey)||event.altKey||event.target.closest('input,textarea,select,[contenteditable]'))return;
+ if(event.key.toLowerCase()==='z'){
+  event.preventDefault();$('hp'+(event.shiftKey?'Redo':'Undo')).click();
+ }else if(event.key.toLowerCase()==='y'){
+  event.preventDefault();$('hpRedo').click();
+ }
+});
+hpButtons();
+let hpImageBlob=null,hpImageUrl='';
+const hpImageFileName='危局HP_ボスHP逆算.png';
+function closeHpImagePreview(){$('hpImageModal').classList.remove('show');$('hpImageModal').setAttribute('aria-hidden','true')}
+function showHpImagePreview(blob){
+ if(hpImageUrl)URL.revokeObjectURL(hpImageUrl);
+ hpImageBlob=blob;hpImageUrl=URL.createObjectURL(blob);
+ $('hpImagePreview').src=hpImageUrl;
+ $('hpImageModal').classList.add('show');$('hpImageModal').setAttribute('aria-hidden','false');
+}
+async function downloadHpImage(){
+ if(!hpImageBlob)return;
+ try{
+  const file=new File([hpImageBlob],hpImageFileName,{type:'image/png'});
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios&&navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:'危局HP画像'});return}
+  const link=document.createElement('a');link.href=hpImageUrl;link.download=hpImageFileName;
+  document.body.append(link);link.click();link.remove();
+ }catch(error){if(error.name!=='AbortError')alert('画像の保存に失敗しました。')}
+}
+$('closeHpImage').addEventListener('click',closeHpImagePreview);
+$('downloadHpImage').addEventListener('click',downloadHpImage);
+$('shareHpImage').addEventListener('click',async()=>{
+ if(!hpImageBlob)return;
+ const file=new File([hpImageBlob],hpImageFileName,{type:'image/png'});
+ if(!navigator.share||!navigator.canShare?.({files:[file]})){alert('この環境では画像の共有に対応していません。');return}
+ try{await navigator.share({files:[file],title:'危局HP画像'})}
+ catch(error){if(error.name!=='AbortError')alert('画像の共有に失敗しました。')}
+});
+$('hpImageModal').addEventListener('click',event=>{if(event.target.id==='hpImageModal')closeHpImagePreview()});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('hpImageModal').classList.contains('show'))closeHpImagePreview()});
+$('saveHpImage').addEventListener('click',async()=>{
+ const button=$('saveHpImage');button.disabled=true;
+ const capture=document.createElement('div');
+ try{
+
+  if(document.fonts)await document.fonts.ready;
+  capture.style.cssText='position:fixed;left:-20000px;top:0;width:740px;padding:24px;background:repeating-linear-gradient(135deg,#171717 0 3px,#141414 3px 7px);color:#f7f7f2;font-family:Arial,"Zen Kaku Gothic New",sans-serif;box-sizing:border-box';
+  const title=document.createElement('h2');title.textContent='危局HP';
+  title.style.cssText='margin:0 0 16px;padding-left:10px;border-left:5px solid #f0eb00;font-size:22px;font-weight:900';capture.append(title);
+  const cards=Array.from(document.querySelectorAll('.firstInverseCard,#extraInverse .extraInverseCard'));
+  for(const [index,card] of cards.entries()){
+   const name=card.querySelector('.inverseName')?.value.trim()||'ボス'+(index+1);
+   const hp=card.querySelector('#total,[data-total]')?.textContent||'—';
+   const row=document.createElement('div');
+   row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:10px;height:68px;box-sizing:border-box;padding:0 20px;border:2px solid #414141;border-radius:18px;background:#202020;font-size:21px;font-weight:900;line-height:1';
+   const nameEl=document.createElement('span');nameEl.textContent=name;nameEl.style.cssText='min-width:0;overflow-wrap:anywhere;line-height:1;transform:translateY(3px)';
+   const hpEl=document.createElement('strong');hpEl.textContent=hp;hpEl.style.cssText='flex:none;color:#f0eb00;font-size:25px;font-variant-numeric:tabular-nums;line-height:1;transform:translateY(3px)';
+   row.append(nameEl,hpEl);capture.append(row);
+  }
+  document.body.append(capture);
+  let canvas;
+  if(typeof html2canvas==='function'){
+   canvas=await html2canvas(capture,{backgroundColor:'#141414',scale:2,useCORS:true,logging:false,scrollX:-window.scrollX,scrollY:-window.scrollY});
+  }else{
+   // Draw the same compact export when the optional screenshot library is unavailable.
+   const scale=2,width=740,height=82+cards.length*78;
+   canvas=document.createElement('canvas');canvas.width=width*scale;canvas.height=height*scale;
+   const ctx=canvas.getContext('2d');ctx.scale(scale,scale);
+   ctx.fillStyle='#141414';ctx.fillRect(0,0,width,height);
+   ctx.strokeStyle='#1d1d1d';ctx.lineWidth=3;
+   for(let x=-height;x<width+height;x+=10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+height,height);ctx.stroke()}
+   ctx.fillStyle='#f0eb00';ctx.fillRect(24,24,5,30);
+   ctx.font='900 22px Arial,"Zen Kaku Gothic New",sans-serif';ctx.fillText('危局HP',39,48);
+   for(const [index,card] of cards.entries()){
+    const y=68+index*78;
+    ctx.fillStyle='#202020';ctx.beginPath();ctx.roundRect(24,y,width-48,68,18);ctx.fill();
+    ctx.strokeStyle='#414141';ctx.lineWidth=2;ctx.stroke();
+    const name=card.querySelector('.inverseName')?.value.trim()||'ボス'+(index+1);
+    const hp=card.querySelector('#total,[data-total]')?.textContent||'—';
+    ctx.textBaseline='middle';
+    ctx.fillStyle='#f0eb00';ctx.font='900 25px Arial,"Zen Kaku Gothic New",sans-serif';
+    ctx.textAlign='right';ctx.fillText(hp,width-44,y+37);
+    ctx.fillStyle='#f7f7f2';ctx.font='900 21px Arial,"Zen Kaku Gothic New",sans-serif';
+    ctx.textAlign='left';
+    const maxWidth=width-80-ctx.measureText(hp).width-18;
+    let shown=name;
+    while(shown.length>1&&ctx.measureText(shown).width>maxWidth)shown=shown.slice(0,-1);
+    if(shown!==name)shown=shown.slice(0,-1)+'…';
+    ctx.fillText(shown,44,y+37);
+   }
+  }
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  if(!blob)throw Error('画像を作成できませんでした。');
+  showHpImagePreview(blob);
+ }catch(error){alert(error.message||'画像の作成に失敗しました。')}
+ finally{capture.remove();button.disabled=false}
+});
+function validateHpShare(data){
+ if(!data||typeof data!=='object'||Array.isArray(data)||!data.fields||typeof data.fields!=='object'||Array.isArray(data.fields)||!Array.isArray(data.extra)||data.extra.length>30||typeof data.firstName!=='string'||data.firstName.length>40)throw Error();
+ const validValue=(value,key)=>{
+  if(typeof value!=='string'||value.length>30)throw Error();
+  if(key==='preset')return value==='2025'||value==='2026';
+  return value===''||/^[0-9,.-]+$/.test(value);
+ };
+ const checked={fields:{},firstName:data.firstName,extra:[]};
+ for(const id of fields){
+  const value=data.fields[id];
+  if(!validValue(value,id.toLowerCase().includes('preset')?'preset':id))throw Error();
+  checked.fields[id]=value;
+ }
+ for(const item of data.extra){
+  if(!item||typeof item!=='object'||Array.isArray(item)||typeof item.name!=='string'||item.name.length>40)throw Error();
+  const checkedItem={name:item.name};
+  for(const key of ['preset',...extraFields]){
+   if(!validValue(item[key],key))throw Error();
+   checkedItem[key]=item[key];
+  }
+  checked.extra.push(checkedItem);
+ }
+ return checked;
+}
+window.zzzDataTransfer?.install($('hp-transfer'),{
+ tool:'hp',label:'危局HP',snapshot:hpState,validate:validateHpShare,
+ restore:data=>{
+  hpRestore(JSON.stringify(data));
+  hpRecord();
+ }
+});
+</script></body></html>
